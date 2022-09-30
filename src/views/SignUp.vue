@@ -67,6 +67,7 @@
       <button
         class="btn btn-lg btn-primary btn-block mb-3"
         type="submit"
+        :disabled = 'isProcessing'
       >
         Submit
       </button>
@@ -87,6 +88,9 @@
 </template>
 
 <script>
+import { Toast } from '../utils/helpers'
+import authorization from '../apis/authorization' 
+
 export default {
   data () {
     return {
@@ -94,19 +98,55 @@ export default {
       email: '',
       password: '',
       passwordCheck: '',
+      isProcessing: false
     }
   },
   methods: {
-    handleSubmit () {
-      const data = JSON.stringify({
-        name: this.name,
-        email: this.email,
-        password: this.password,
-        passwordCheck: this.passwordCheck
-      })
+    async handleSubmit () {
+      try {
 
-      // TODO: 向後端驗證使用者登入資訊是否合法
-      console.log('data', data)
+        if(this.name === '' || this.email ==='' || this.password ==='' || this.passwordCheck === ''){
+          Toast.fire({
+            icon: 'warning',
+            title: '請填寫所有欄位'
+          })
+          return
+        }
+
+        if(this.password !== this.passwordCheck){
+          Toast.fire({
+            icon: 'warning',
+            title: '請確認密碼一致'
+          })
+          return
+        }   
+
+        const { data } = await authorization.signUp({
+          name: this.name,
+          email: this.email,
+          password: this.password,
+          passwordCheck: this.passwordCheck
+        })
+
+        this.isProcessing = true
+
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+
+        this.$router.push({ name: 'restaurants' })
+      }catch(err){
+        this.isProcessing = false
+        console.log('error',err)
+        Toast.fire({
+          icon: 'warning',
+          title: `${err.message}，無法註冊`
+        })
+        this.name = ''
+        this.email = ''
+        this.password = ''
+        this.passwordCheck = ''
+      }
     }
   }
 }

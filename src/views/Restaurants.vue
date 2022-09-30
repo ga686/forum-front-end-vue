@@ -5,84 +5,33 @@
     <h1 class="mt-5">
       首頁 - 餐廳列表
     </h1>
-    <RestaurantCard v-for="restaurant in restaurants" :key="restaurant.id" :initial-restaurant="restaurant"/>
+    <div class="row">
+      <RestaurantCard v-for="restaurant in restaurants" :key="restaurant.id" :initial-restaurant="restaurant"/>
+    </div>
+    <RestaurantsPagination
+        v-if="totalPage.length > 1"
+        :current-page="currentPage"
+        :total-page="totalPage"
+        :category-id="categoryId"
+        :previous-page="previousPage"
+        :next-page="nextPage"
+      />
   </div>
 </template>
 <script>
 import NavTabs from './../components/NavTabs'
 import RestaurantCard from './../components/RestaurantCard'
 import RestaurantNavPills from './../components/RestaurantNavPills'
-
-const dummyData = {
-    "restaurants": [
-        {
-            "id": 81,
-            "name": "A",
-            "tel": null,
-            "address": null,
-            "opening_hours": null,
-            "description": "www",
-            "image": "https://i.imgur.com/CMdEy1g.jpeg",
-            "viewCounts": 34,
-            "createdAt": "2022-09-02T21:52:30.000Z",
-            "updatedAt": "2022-09-11T14:20:53.000Z",
-            "CategoryId": 11,
-            "Category": {
-                "id": 11,
-                "name": "SOUP",
-                "createdAt": "2022-09-02T21:17:08.000Z",
-                "updatedAt": "2022-09-02T21:17:08.000Z"
-            },
-            "isFavorited": false,
-            "isLiked": true
-        }
-    ],
-    "categories": [
-        {
-            "id": 11,
-            "name": "SOUP",
-            "createdAt": "2022-09-02T21:17:08.000Z",
-            "updatedAt": "2022-09-02T21:17:08.000Z"
-        },
-        {
-            "id": 21,
-            "name": "GARNISH",
-            "createdAt": "2022-09-02T21:17:21.000Z",
-            "updatedAt": "2022-09-02T21:17:21.000Z"
-        },
-        {
-            "id": 31,
-            "name": "MEAT  ",
-            "createdAt": "2022-09-02T21:17:26.000Z",
-            "updatedAt": "2022-09-02T21:17:26.000Z"
-        },
-        {
-            "id": 41,
-            "name": "FISH",
-            "createdAt": "2022-09-02T21:17:30.000Z",
-            "updatedAt": "2022-09-02T21:17:30.000Z"
-        },
-        {
-            "id": 51,
-            "name": "DRINK",
-            "createdAt": "2022-09-02T21:17:34.000Z",
-            "updatedAt": "2022-09-02T21:17:34.000Z"
-        }
-    ],
-    "categoryId": "",
-    "page": 1,
-    "totalPage": [
-        1
-    ],
-    "prev": 1,
-    "next": 1
-}
+import RestaurantsPagination from './../components/RestaurantsPagination'
+import restaurantsAPI from './../apis/restaurants'
+import {Toast} from './../utils/helpers'
 
 export default {
   components: {
     NavTabs,
     RestaurantCard,
-    RestaurantNavPills
+    RestaurantNavPills,
+    RestaurantsPagination
   },
   data () {
     return {
@@ -96,29 +45,48 @@ export default {
 
     }
   },
-  created(){
-    this.fetchRestaurants()
+  created () {
+    const { page = '', categoryId = '' } = this.$route.query
+    this.fetchRestaurants({ queryPage: page, queryCategoryId: categoryId })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const { page = '', categoryId = '' } = to.query
+    this.fetchRestaurants({ queryPage: page, queryCategoryId: categoryId })
+    next()
   },
   methods: {
-    fetchRestaurants () {
-      const {
-        restaurants,
-        categories,
-        categoryId,
-        page,
-        totalPage,
-        prev,
-        next
-      } = dummyData
-      this.restaurants = restaurants
-      this.categories = categories
-      this.categoryId = categoryId
-      this.currentPage = page
-      this.totalPage = totalPage
-      this.previousPage = prev
-      this.nextPage = next
-    }
+    async fetchRestaurants ({ queryPage, queryCategoryId }) {
+      try {
+        const response = await restaurantsAPI.getRestaurants({
+          page: queryPage,
+          categoryId: queryCategoryId
+        })
 
+        const {
+          restaurants,
+          categories,
+          categoryId,
+          page,
+          totalPage,
+          prev,
+          next
+        } = response.data
+
+        this.restaurants = restaurants
+        this.categories = categories
+        this.categoryId = categoryId
+        this.currentPage = page
+        this.totalPage = totalPage
+        this.previousPage = prev
+        this.nextPage = next
+      } catch (error) {
+        console.log('error', error)
+        Toast.fire({
+          icon: 'error',
+          title: '無法取得餐廳資料，請稍後再試'
+        })
+      }
+    },
   }
 }
 

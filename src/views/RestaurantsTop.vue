@@ -38,13 +38,13 @@
               type="button"
               class="btn btn-danger mr-2"
               v-if="restaurant.isFavorited"
-              @click.stop.prevent="deleteFavorite(restaurant)"
+              @click.stop.prevent="deleteFavorite(restaurant.id)"
             >
               移除最愛
             </button>
             <button
               v-else
-              @click.stop.prevent="addFavorite(restaurant)"
+              @click.stop.prevent="addFavorite(restaurant.id)"
               type="button"
               class="btn btn-primary"
             >
@@ -59,83 +59,93 @@
 
 <script>
 import NavTabs from './../components/NavTabs'
+import restaurantsAPI from './../apis/restaurants'
+import usersAPI from './../apis/users'
+import { Toast } from '../utils/helpers'
 
-const dummyData = {
-    "restaurants": [
-        {
-            "id": 81,
-            "name": "A",
-            "tel": null,
-            "address": null,
-            "opening_hours": null,
-            "description": "www",
-            "image": "https://i.imgur.com/CMdEy1g.jpeg",
-            "viewCounts": 39,
-            "createdAt": "2022-09-02T21:52:30.000Z",
-            "updatedAt": "2022-09-15T07:55:26.000Z",
-            "CategoryId": 11,
-            "FavoritedUsers": [
-                {
-                    "id": 2,
-                    "name": "user1",
-                    "email": "user1@example.com",
-                    "password": "$2a$10$.8Fh51CCtHSVL2soTn5u0O8/08a0t8fkbvtBouedlH3RHeFEKqkfe",
-                    "isAdmin": false,
-                    "image": "https://i.imgur.com/iO9H3N1.png",
-                    "createdAt": "2022-07-13T07:58:49.000Z",
-                    "updatedAt": "2022-09-15T07:55:44.000Z",
-                    "Favorite": {
-                        "UserId": 2,
-                        "RestaurantId": 81,
-                        "createdAt": "2022-09-11T14:16:23.000Z",
-                        "updatedAt": "2022-09-11T14:16:23.000Z"
-                    }
-                },
-                {
-                    "id": 111,
-                    "name": "test",
-                    "email": "test@gmail.com",
-                    "password": "$2a$10$nFDBPWdglZsulNpuUxi2lOot4KbqYQo9E4bFuv5NiJKdeh9Usjhsi",
-                    "isAdmin": false,
-                    "image": null,
-                    "createdAt": "2022-09-14T13:40:44.000Z",
-                    "updatedAt": "2022-09-14T13:40:44.000Z",
-                    "Favorite": {
-                        "UserId": 111,
-                        "RestaurantId": 81,
-                        "createdAt": "2022-09-14T13:41:01.000Z",
-                        "updatedAt": "2022-09-14T13:41:01.000Z"
-                    }
-                }
-            ],
-            "isFavorited": false,
-            "FavoriteCount": 2
-        }
-    ]
-}
+
 
 export default {
   data (){
     return{
-      restaurants: dummyData.restaurants
+      restaurants: []
     }
   },
   components: {
     NavTabs
   },
   methods: {
-    addFavorite (target) {
-      this.restaurants.filter((restaurant)=> {
-        if(restaurant.id === target.id)
-        target.isFavorited = true
-      })
+    async fetchTopresaturants () {
+      try{
+        const {data} = await restaurantsAPI.getTopRestaurants()
+        this.restaurants = data.restaurants
+      }catch(err){
+        console.log('error',err)
+        Toast.fire({
+          icon: 'error',
+          title: '找不到資料，請稍後再試'
+        })
+      }
     },
-    deleteFavorite (target) {
-      this.restaurants.filter((restaurant)=> {
-        if(restaurant.id === target.id)
-        target.isFavorited = false
-      })
+    async addFavorite (restaurantId) {
+      try {
+        const { data } = await usersAPI.addFavorite({ restaurantId })
+
+        console.log('data', data)
+
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+
+        this.restaurants = this.restaurants.map(restaurant => {
+          if (restaurant.id !== restaurantId) {
+            return restaurant
+          } else {
+            return {
+              ...restaurant,
+              FavoriteCount: restaurant.FavoriteCount + 1,
+              isFavorited: true
+            }
+          }
+        })
+      } catch (error) {
+        Toast.fire({
+          icon: 'error',
+          title: '無法加入追蹤，請稍後再試'
+        })
+      }
     },
+    async deleteFavorite (restaurantId) {
+      try {
+        const { data } = await usersAPI.deleteFavorite({ restaurantId })
+
+        console.log('data', data)
+
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+
+        this.restaurants = this.restaurants.map(restaurant => {
+          if (restaurant.id !== restaurantId) {
+            return restaurant
+          } else {
+            return {
+              ...restaurant,
+              FavoriteCount: restaurant.FavoriteCount - 1,
+              isFavorited: false
+            }
+          }
+        })
+      } catch (error) {
+        Toast.fire({
+          icon: 'error',
+          title: '無法移除追蹤，請稍後再試'
+        })
+      }
+    },
+  },
+  created () {
+    this.fetchTopresaturants()
   }
 }
 </script>
