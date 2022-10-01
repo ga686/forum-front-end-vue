@@ -26,7 +26,9 @@
 </template>
 
 <script>
+import restaurantsAPI from './../apis/restaurants'
 import { v4 as uuidv4 } from "uuid"
+import { Toast } from '../utils/helpers'
 
 export default {
   data () {
@@ -41,13 +43,31 @@ export default {
     }
   },
   methods: {
-    handleSubmit () {
-      this.$emit('after-create-comment', {
-        commentId: uuidv4(), // 尚未串接 API 暫時使用隨機的 id
-        restaurantId: this.restaurantId,
-        text: this.text
-      })
-      this.text = '' // 將表單內的資料清空
+    async handleSubmit () {
+      try{
+        this.$emit('after-create-comment', {
+          commentId: uuidv4(), // 尚未串接 API 暫時使用隨機的 id
+          restaurantId: this.restaurantId,
+          text: this.text
+        })
+        const data  = restaurantsAPI.addComments({
+          commentId: uuidv4(), // 尚未串接 API 暫時使用隨機的 id
+          restaurantId: this.restaurantId,
+          text: this.text
+        })
+
+        if(data.status === "error"){
+          throw new Error(data.message)
+        }
+
+        this.text = '' // 將表單內的資料清空
+      }catch(err){
+        console.error(err)
+        Toast.fire({
+          icon: 'warning',
+          title: '無法新增評論，請稍後再試'
+        })
+      }
     }
   }
 }

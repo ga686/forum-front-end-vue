@@ -79,6 +79,11 @@ export default {
         this.totalPage = totalPage
         this.previousPage = prev
         this.nextPage = next
+        this.restaurants.filter((restaurant)=> { 
+          if(restaurant.Category === null){ 
+            return restaurant.Category =  {name: "未分類"}
+          } 
+        })
       } catch (error) {
         console.log('error', error)
         Toast.fire({

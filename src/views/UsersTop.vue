@@ -9,13 +9,13 @@
       <div class="col-3" v-for="user in users" :key="user.id">
         <router-link :to="{ name: 'user', params: { id: user.id } }">
           <img
-            :src="user.image"
+            :src="user.image | emptyImage"
             width="140px"
             height="140px"
           >
         </router-link>
         <h2>{{user.name}}</h2>
-        <span class="badge badge-secondary">追蹤人數：{{user.FollowerCount}}</span>
+        <span class="badge badge-secondary">追蹤人數：{{user.followerCount}}</span>
         <p class="mt-3">
           <button
             type="button"
@@ -42,9 +42,10 @@
 import NavTabs from './../components/NavTabs'
 import usersAPI from './../apis/users'
 import { Toast } from './../utils/helpers'
-
+import { emptyImageFilter } from './../utils/mixins'
 
 export default {
+  mixins: [emptyImageFilter],
   data () {
     return {
       users: [],
@@ -65,6 +66,7 @@ export default {
           followerCount: user.FollowerCount,
           isFollowed: user.isFollowed
         }))
+        console.log(this.users)
       } catch (error) {
         console.log(error)
         Toast.fire({

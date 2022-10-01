@@ -31,25 +31,12 @@
 </template>
 <script>
 import { fromNowFilter } from './../utils/mixins'
-
-const dummyUser = {
-  currentUser: {
-    id: 1,
-    name: '管理者',
-    email: 'root@example.com',
-    image: 'https://i.pravatar.cc/300',
-    isAdmin: true
-  },
-  isAuthenticated: true
-}
+import restaurantsAPI from './../apis/restaurants'
+import { mapState } from 'vuex'
+import { Toast } from '../utils/helpers'
 
 
 export default{
-  data () {
-    return {
-      currentUser: dummyUser.currentUser
-    }
-  },
   props: {
     restaurantComments:{
       type: Array,
@@ -58,12 +45,26 @@ export default{
   },
   mixins: [fromNowFilter],
   methods: {
-    handleDeleteButtonClick (commentId) {
-      console.log('handleDeleteButtonClick', commentId)
-      // TODO: 請求 API 伺服器刪除 id 為 commentId 的評論
-      // 觸發父層事件 - $emit( '事件名稱' , 傳遞的資料 )
-      this.$emit('after-delete-comment', commentId)
+    async handleDeleteButtonClick (commentId) {
+      try{
+        // TODO: 請求 API 伺服器刪除 id 為 commentId 的評論
+        const { data } = await restaurantsAPI.deleteComments({commentId})
+
+        if(data.status === "error"){
+          throw new Error(data.message)
+        }
+        this.$emit('after-delete-comment', commentId)
+      }catch(err){
+        console.log('error',err)
+        Toast.fire({
+          icon: 'warning',
+          title: '無法找到評論，請稍後再試'
+        })
+      }
     }
+  },
+  computed: {
+    ...mapState(['currentUser'])
   }
 }
 </script>
