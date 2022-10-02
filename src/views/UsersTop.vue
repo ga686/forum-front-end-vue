@@ -1,7 +1,9 @@
 <template>
   <div class="container py-5">
     <NavTabs />
-    <h1 class="mt-5">
+    <Spinner v-if="isProcessing"/>
+    <template v-else>
+      <h1 class="mt-5">
       美食達人
     </h1>
     <hr>
@@ -36,6 +38,7 @@
         </p>
       </div>
     </div>
+    </template>
   </div>
 </template>
 <script>
@@ -43,16 +46,19 @@ import NavTabs from './../components/NavTabs'
 import usersAPI from './../apis/users'
 import { Toast } from './../utils/helpers'
 import { emptyImageFilter } from './../utils/mixins'
+import Spinner from '../components/Spinner'
 
 export default {
   mixins: [emptyImageFilter],
   data () {
     return {
       users: [],
+      isProcessing: true
     }
   },
   components: {
-    NavTabs
+    NavTabs,
+    Spinner
   },
   methods: {
     async fetchTopUsers () {
@@ -67,7 +73,9 @@ export default {
           isFollowed: user.isFollowed
         }))
         console.log(this.users)
+        this.isProcessing = false
       } catch (error) {
+        this.isProcessing = false
         console.log(error)
         Toast.fire({
           icon: 'error',

@@ -2,20 +2,24 @@
   <div class="container py-5">
     <NavTabs />
     <RestaurantNavPills :categories="categories"/>
-    <h1 class="mt-5">
-      首頁 - 餐廳列表
-    </h1>
-    <div class="row">
-      <RestaurantCard v-for="restaurant in restaurants" :key="restaurant.id" :initial-restaurant="restaurant"/>
-    </div>
-    <RestaurantsPagination
-        v-if="totalPage.length > 1"
-        :current-page="currentPage"
-        :total-page="totalPage"
-        :category-id="categoryId"
-        :previous-page="previousPage"
-        :next-page="nextPage"
-      />
+    <Spinner v-if="isProcessing"/>
+    <template v-else>
+        <h1 class="mt-5">
+          首頁 - 餐廳列表
+        </h1>
+        <div class="row">
+          <RestaurantCard v-for="restaurant in restaurants" :key="restaurant.id" :initial-restaurant="restaurant"/>
+        </div>
+        <RestaurantsPagination
+            v-if="totalPage.length > 1"
+            :current-page="currentPage"
+            :total-page="totalPage"
+            :category-id="categoryId"
+            :previous-page="previousPage"
+            :next-page="nextPage"
+          />
+        <div v-if="restaurants.length < 1">此類別無餐廳資料</div>
+    </template>
   </div>
 </template>
 <script>
@@ -25,13 +29,15 @@ import RestaurantNavPills from './../components/RestaurantNavPills'
 import RestaurantsPagination from './../components/RestaurantsPagination'
 import restaurantsAPI from './../apis/restaurants'
 import {Toast} from './../utils/helpers'
+import Spinner from '../components/Spinner'
 
 export default {
   components: {
     NavTabs,
     RestaurantCard,
     RestaurantNavPills,
-    RestaurantsPagination
+    RestaurantsPagination,
+    Spinner
   },
   data () {
     return {
@@ -41,8 +47,8 @@ export default {
       currentPage: 1,
       totalPage: [],
       previousPage: -1,
-      nextPage: -1
-
+      nextPage: -1,
+      isProcessing: true
     }
   },
   created () {
@@ -84,7 +90,9 @@ export default {
             return restaurant.Category =  {name: "未分類"}
           } 
         })
+        this.isProcessing = false
       } catch (error) {
+        this.isProcessing = false
         console.log('error', error)
         Toast.fire({
           icon: 'error',
